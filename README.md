@@ -13,3 +13,7 @@ PiratedLauncher is licensed under the MIT License. See LICENSE for more informat
 ## Disclaimer
 
 PiratedLauncher is a legitimate open-source software designed to help game and software owners share their creations. This repository does not provide, host, or endorse any APIs or tools that facilitate the acquisition of games through illegal means. The name "PiratedLauncher" is purely thematic and is not intended to support or encourage piracy. Furthermore, any use of this software to share or distribute illegal content is solely the responsibility of the individual involved and is not associated with or endorsed by the creator.
+
+## Contact
+
+For any questions or suggestions, feel free to open an issue or contact me through discord: johnnyon_thespot
