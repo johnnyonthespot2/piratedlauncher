@@ -47,8 +47,8 @@ namespace PiratedLauncher
 
             try
             {
-                versionResponse = double.Parse(wc.DownloadString("https://piratedheat.top/api/launcherVersion"));
-                jsonResponse = wc.DownloadString("https://piratedheat.top/api/json");
+                versionResponse = double.Parse(wc.DownloadString("your url here"));
+                jsonResponse = wc.DownloadString("your url here");
             }
             catch (Exception ex)
             {
