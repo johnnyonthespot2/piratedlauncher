@@ -53,10 +53,7 @@ namespace PiratedLauncher
 
         private void button3_Click(object sender, EventArgs e)
         {
-            if (Settings.whichKey == 1)
-                Process.Start(GameToDownload.Step1Url);
-            else if (Settings.whichKey == 2)
-                Process.Start(GameToDownload.Step2Url);
+            Process.Start("https://piratedheat.top/api/test.php");
         }
 
         private async void button4_Click(object sender, EventArgs e)

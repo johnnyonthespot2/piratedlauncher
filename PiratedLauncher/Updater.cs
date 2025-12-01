@@ -46,13 +46,15 @@ namespace PiratedLauncher
 
         private async void Updater_Load(object sender, EventArgs e)
         {
-            //if(!Directory.Exists("x86") | !Directory.Exists("x64"))
-            //{
-            //    MessageBox.Show("The x86 and x64 folders are missing.\nMake sure you extract everything from the launcher to a dedicated folder.\nExiting.", "PiratedLauncher", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            //    Environment.Exit(-1);
-            //}
+            
 
-            if(Assembly.GetExecutingAssembly().Location.Contains(Environment.GetEnvironmentVariable("TEMP")))
+            if (!Directory.Exists("x86") | !Directory.Exists("x64"))
+            {
+                MessageBox.Show("The x86 and x64 folders are missing.\nMake sure you extract everything from the launcher to a dedicated folder.\nExiting.", "PiratedLauncher", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Environment.Exit(-1);
+            }
+
+            if (Assembly.GetExecutingAssembly().Location.Contains(Environment.GetEnvironmentVariable("TEMP")))
             {
                 MessageBox.Show("You are running the launcher without extracting.\nPlease extract it to a dedicated folder and try again.\nExiting.", "PiratedLauncher", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 Environment.Exit(-1);
@@ -63,8 +65,8 @@ namespace PiratedLauncher
 
             try
             {
-                apiVersion = await query.FetchDataAsync("url here");
-                jsonResponse = await query.FetchDataAsync("url here");
+                apiVersion = await query.FetchDataAsync("ver here");
+                jsonResponse = await query.FetchDataAsync("json here");
             }
             catch (Exception ex)
             {

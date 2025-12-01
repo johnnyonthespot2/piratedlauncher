@@ -12,7 +12,7 @@ namespace PiratedLauncher
         public static string inputtedSecondKey = "ba";
         public static int whichKey = 1;
 
-        public static string launcherVersion = "0.9";
+        public static string launcherVersion = "1.1";
         public static int downloadSpeedLimit = 1024 * 1024 * 1024;
         public static bool downloadPaused = false;
     }

@@ -11,7 +11,7 @@ namespace PiratedLauncher
         public static async Task<bool> CheckKey(string key)
         {
             query.Initialize();
-            var url = $"https://piratedheat.top/api/checkKey.php?api_key={key}";
+            var url = $"https://piratedheat.top/api/checkKey2.php?api_key={key}";
 
             try
             {

@@ -27,11 +27,12 @@ namespace PiratedLauncher
         private void button2_Click(object sender, EventArgs e)
         {
             this.WindowState = FormWindowState.Minimized;
+            
         }
 
         private void SettingsForm_Load(object sender, EventArgs e)
         {
-
+            
         }
 
         private void button3_Click(object sender, EventArgs e)

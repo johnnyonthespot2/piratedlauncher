@@ -1,4 +1,4 @@
-﻿using SharpCompress.Archives;
+﻿using SevenZipExtractor;
 using System;
 using System.IO;
 using System.Linq;
@@ -8,78 +8,111 @@ using System.Windows.Forms;
 
 public class FileExtractor
 {
-    private CancellationTokenSource _pauseTokenSource;
-    private bool _isPaused;
+    private CancellationTokenSource _cancellationTokenSource;
+    private ManualResetEventSlim _pauseEvent = new ManualResetEventSlim(true);
+    public bool _isPaused = false;
+    public bool _isExtracting = false;
 
-    public bool IsPaused => _isPaused;
-
-    public FileExtractor()
-    {
-        _pauseTokenSource = new CancellationTokenSource();
-    }
-
-    public void PauseExtraction()
-    {
-        if (_isPaused) return;
-        _isPaused = true;
-        _pauseTokenSource?.Cancel();
-        _pauseTokenSource = new CancellationTokenSource();
-    }
-
-    public void ResumeExtraction()
-    {
-        if (!_isPaused) return;
-        _isPaused = false;
-    }
-
-    public bool ExtractArchive(string archivePath, string destinationDirectory, IProgress<(float progress, string status)> progress = null)
+    public async Task<bool> ExtractArchiveAsync(string archivePath, string destinationDirectory, IProgress<(float progress, string status)> progress)
     {
         try
         {
             Directory.CreateDirectory(destinationDirectory);
+            _cancellationTokenSource = new CancellationTokenSource();
+            _isExtracting = true;
 
-            using (var archive = ArchiveFactory.Open(archivePath))
+            using (ArchiveFile archiveFile = new ArchiveFile(archivePath))
             {
-                var entries = archive.Entries.Where(entry => !entry.IsDirectory).ToList();
-                long totalSize = entries.Sum(entry => entry.Size);
-                long totalBytesExtracted = 0;
+                int totalFiles = archiveFile.Entries.Count;
+                int extractedFiles = 0;
 
-                foreach (var entry in entries)
+                // Process sequentially for reliability
+                await Task.Run(() =>
                 {
-                    string filePath = Path.Combine(destinationDirectory, entry.Key);
-                    Directory.CreateDirectory(Path.GetDirectoryName(filePath));
-
-                    using (var entryStream = entry.OpenEntryStream())
-                    using (var fileStream = File.Create(filePath))
+                    foreach (var entry in archiveFile.Entries)
                     {
-                        byte[] buffer = new byte[8192];
-                        int bytesRead;
-                        while ((bytesRead = entryStream.Read(buffer, 0, buffer.Length)) > 0)
+                        _pauseEvent.Wait();
+                        _cancellationTokenSource.Token.ThrowIfCancellationRequested();
+
+                        string filePath = Path.Combine(destinationDirectory, entry.FileName);
+                        if (entry.IsFolder)
                         {
-                            while (_isPaused)
-                            {
-                                Task.Delay(100, _pauseTokenSource.Token).Wait();
-                            }
+                            Directory.CreateDirectory(filePath);
+                        }
+                        else
+                        {
+                            string directoryName = Path.GetDirectoryName(filePath);
+                            if (!string.IsNullOrEmpty(directoryName))
+                                Directory.CreateDirectory(directoryName);
 
-                            fileStream.Write(buffer, 0, bytesRead);
-                            totalBytesExtracted += bytesRead;
-
-                            if (progress != null && totalSize > 0)
+                            using (var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None))
                             {
-                                float percentComplete = (float)totalBytesExtracted / totalSize;
-                                progress.Report((percentComplete, $"Extracting {Path.GetFileName(entry.Key)}"));
+                                entry.Extract(fileStream);
+                                fileStream.Flush(); // Ensure data is written to disk
                             }
                         }
+
+                        Interlocked.Increment(ref extractedFiles);
+                        float progressValue = (float)extractedFiles / totalFiles;
+                        progress.Report((progressValue, $"Extracting {entry.FileName}"));
                     }
-                }
+                });
             }
+
+            _isExtracting = false;
+            progress.Report((1.0f, "Extraction Complete"));
             return true;
+        }
+        catch (OperationCanceledException)
+        {
+            progress.Report((0.0f, "Extraction Canceled"));
+            return false;
         }
         catch (Exception ex)
         {
-            MessageBox.Show("There was an error extracting the files. Error was copied to your clipboard in case you want to send it on the discord server for help.", "PiratedLauncher", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            Clipboard.SetText(ex.ToString());
+            ShowError("Error extracting files. Check clipboard for details.", ex);
+            progress.Report((0.0f, "Extraction Failed"));
             return false;
+        }
+    }
+
+    public void Pause()
+    {
+        if (_isExtracting && !_isPaused)
+        {
+            _pauseEvent.Reset();
+            _isPaused = true;
+        }
+    }
+
+    public void Resume()
+    {
+        if (_isExtracting && _isPaused)
+        {
+            _pauseEvent.Set();
+            _isPaused = false;
+        }
+    }
+
+    public void Cancel()
+    {
+        if (_isExtracting)
+        {
+            _cancellationTokenSource.Cancel();
+            _pauseEvent.Set();
+        }
+    }
+
+    private void ShowError(string message, Exception ex)
+    {
+        MessageBox.Show(message, "PiratedLauncher", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        if (Application.OpenForms[0].InvokeRequired)
+        {
+            Application.OpenForms[0].Invoke(new Action(() => Clipboard.SetText(ex.ToString())));
+        }
+        else
+        {
+            Clipboard.SetText(ex.ToString());
         }
     }
 }
